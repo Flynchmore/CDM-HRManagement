@@ -1,0 +1,53 @@
+# Visual Studio / .NET
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build outputs
+bin/
+obj/
+Debug/
+Release/
+
+# Publish output
+publish/
+out/
+
+# Rider / IDE
+.idea/
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Node / npm
+node_modules/
+
+# Python venv
+.venv/
+
+# Log files
+*.log
+
+# Application settings / secrets (never commit credentials)
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+FIRESTORE_CREDENTIALS_JSON
+*.pfx
+*.key
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# OneDrive or temp files
+~$*
+
+# Ignore JSON credential files (if you accidentally have them)
+*.json
