@@ -1,0 +1,47 @@
+﻿@page
+@model LoginAsAdminModel
+@{
+    ViewData["Title"] = "Login As Admin";
+}
+
+<div class="text-center mt-5">
+    <h2 class="fw-bold" style="color: #FFD544; font-size: 2.2rem;">
+        <i class="bi bi-building me-2"></i> Colegio de Montalban
+    </h2>
+</div>
+
+<div class="d-flex justify-content-center align-items-start" style="min-height: 100vh; padding-top: 100px;">
+    <div class="card shadow-lg border-0" style="width: 480px; border-radius: 15px;">
+        <div class="card-body p-4">
+            <h4 class="text-center mb-4 fw-bold" style="color: #3a5a40;"> Login As Admin</h4>
+
+            <form method="post">
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="alert alert-danger text-center fw-semibold" role="alert">
+                        @Model.ErrorMessage
+                    </div>
+                }
+
+                <!-- Username -->
+                <div class="mb-3">
+                    <label for="Username" class="form-label fw-semibold">Username</label>
+                    <input type="text" class="form-control" id="Username" name="Username" placeholder="Enter username" required>
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <label for="Password" class="form-label fw-semibold">Password</label>
+                    <input type="password" class="form-control" id="Password" name="Password" placeholder="Enter password" required>
+                </div>
+
+                <!-- Login button -->
+                <div class="d-grid">
+                    <button type="submit" class="btn fw-semibold" style="background-color: #3a5a40; color: white;">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

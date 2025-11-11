@@ -1,0 +1,48 @@
+# ===== C# / ASP.NET Core / Visual Studio =====
+
+# Build folders
+bin/
+obj/
+Debug/
+Release/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio cache / temp
+.vs/
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Publish outputs
+/publish/
+/dist/
+
+# Secrets and credentials
+secrets.json
+appsettings.Development.json
+appsettings.Local.json
+
+# Node.js (if you use npm or yarn)
+node_modules/
+
+# Python virtual environment (optional)
+.venv/
+
+# Firestore credentials (JSON key)
+*.json
+
+# Git itself
+.gitignore

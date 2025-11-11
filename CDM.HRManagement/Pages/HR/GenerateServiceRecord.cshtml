@@ -1,0 +1,313 @@
+﻿@page
+@model CDM.HRManagement.Pages.HR.GenerateServiceRecordModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Generate Service Record";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="position-relative mb-5 text-center">
+                <a href="/HR/Dashboard" class="btn btn-outline-secondary btn-lg position-absolute top-0 end-0"
+                   style="color: white; border-color: white;">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+                <i class="bi bi-file-earmark-text-fill" style="font-size: 4rem; color: #FFD544;"></i>
+                <h1 class="display-5 fw-bold" style="color: #FFD544;">Generate Service Record</h1>
+                <p class="text-white">Create an official service record certificate for an employee</p>
+            </div>
+
+            <!-- Selection Form -->
+            <div class="card border-0 shadow-lg mb-4">
+                <div class="card-body p-5">
+                    <form id="serviceRecordForm">
+                        <div class="row g-4">
+                            <!-- Select Employee -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Select Employee <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-lg" id="employeeSelect" required onchange="loadEmployeeData()">
+                                    <option value="">Choose an employee...</option>
+                                    @foreach (var emp in Model.Employees)
+                                    {
+                                        <option value="@emp.Id">@emp.Id — @emp.Name - @emp.Position (@emp.Department)</option>
+                                    }
+                                </select>
+
+                                @if (Model.Employees == null || !Model.Employees.Any())
+                                {
+                                    <div class="mt-2 text-muted small">
+                                        No active employees available. Only employees with status <strong>Active</strong> can generate service records.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="mt-2 text-muted small">
+                                        Only <strong>Active</strong> employees are listed here.
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Employee Details (Auto-filled) -->
+                            <div id="employeeDetails" style="display: none;">
+                                <hr class="my-4">
+                                <h5 class="fw-bold" style="color: #3a5a40;">Employee Information</h5>
+
+                                <div class="row g-3">
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold">Employee ID</label>
+                                        <input type="text" class="form-control form-control-lg" id="employeeId" readonly>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold">Full Name</label>
+                                        <input type="text" class="form-control form-control-lg" id="fullName" readonly>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Position</label>
+                                        <input type="text" class="form-control form-control-lg" id="position" readonly>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Department/Institute</label>
+                                        <input type="text" class="form-control form-control-lg" id="department" readonly>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Start Date</label>
+                                        <input type="date" class="form-control form-control-lg" id="startDate" readonly>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">End Date <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control form-control-lg" id="endDate" required onchange="calculateService()">
+                                        <small class="text-muted">Leave empty if employee is still active</small>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="alert" style="background-color: #a3b18a; color: #000000; border: none;">
+                                        <h6 class="fw-bold mb-2">
+                                            <i class="bi bi-clock-history"></i> Calculated Length of Service
+                                            </h6>
+                                         <h4 class="mb-0" id="lengthOfService">-</h4>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Generate Button -->
+                                <div class="text-center mt-4">
+                                    <button 
+                                    type="button" 
+                                    class="btn btn-lg px-5 me-2" 
+                                    style="background-color: #a3b18a; color: #000000; border: none;" 
+                                    onclick="generateCertificate()">
+                                        <i class="bi bi-file-earmark-check"></i> Generate Certificate
+                                    </button>
+                                    <a href="/HR/Dashboard" class="btn btn-outline-secondary btn-lg px-5">
+                                        <i class="bi bi-x-circle"></i> Cancel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Certificate Preview (Hidden initially) -->
+            <div class="card border-0 shadow-lg" id="certificatePreview" style="display: none;">
+                <div class="card-body p-5" style="background: linear-gradient(135deg, #3a5a40 0%, #a3b18a 100%); color: white;">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold" style="color: #FFD544;">COLEGIO DE MONTALBAN</h2>
+                        <p class="mb-0" style="color: #FFD544;">Human Resources Department</p>
+                    </div>
+                </div>
+
+                <div class="card-body p-5" id="certificateContent">
+                    <div class="text-center mb-5">
+                        <h3 class="fw-bold" style="color: #3a5a40;">CERTIFICATE OF SERVICE</h3>
+                    </div>
+
+                    <div class="certificate-text" style="line-height: 2.5; font-size: 1.1rem;">
+                        <p class="text-center mb-2">
+                            <small class="text-muted" id="cert_empId"></small>
+                        </p>
+
+                        <p class="text-center mb-5">
+                            This is to certify that <strong style="color: #3a5a40;" id="cert_name">JUAN DELA CRUZ</strong>,
+                            <span id="cert_position">Professor</span> of the
+                            <span id="cert_department">College of Engineering</span>,
+                            Colegio de Montalban, served the institution from
+                            <strong id="cert_startDate">August 16, 2015</strong> to
+                            <strong id="cert_endDate">October 21, 2025</strong>,
+                            with a total length of service of
+                            <strong style="color: #3a5a40;" id="cert_length">10 years, 2 months, and 5 days</strong>.
+                        </p>
+
+                        <p class="text-center mt-5 mb-5">
+                            This certificate is issued upon request for whatever legal purpose it may serve.
+                        </p>
+
+                        <p style="color: #3a5a40;">
+                            Given this <strong id="cert_issueDate">21st day of October 2025</strong>
+                            at Colegio de Montalban, Montalban, Rizal, Philippines.
+                        </p>
+                    </div>
+
+                    <div class="row mt-5 pt-5">
+                        <div class="col-6 text-center">
+                            <div class="signature-line">
+                                <strong>_____________________________</strong>
+                                <p class="mb-0 mt-2"><strong>HR Director</strong></p>
+                                <p class="text-muted small">Human Resources Department</p>
+                            </div>
+                        </div>
+                        <div class="col-6 text-center">
+                            <div class="signature-line">
+                                <strong>_____________________________</strong>
+                                <p class="mb-0 mt-2"><strong>College President</strong></p>
+                                <p class="text-muted small">Colegio de Montalban</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white border-0 text-center py-4">
+                    <button class="btn btn-success btn-lg me-2" onclick="downloadPDF()">
+                        <i class="bi bi-download"></i> Download PDF
+                    </button>
+                    <button class="btn btn-primary btn-lg me-2" onclick="printCertificate()">
+                        <i class="bi bi-printer"></i> Print
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // employees data injected from server-side model (id, name, position, department, startDate, email)
+    const employees = @Html.Raw(JsonSerializer.Serialize(Model.Employees.ToDictionary(e => e.Id, e => new {
+        id = e.Id,
+        name = e.Name,
+        position = e.Position,
+        department = e.Department,
+        startDate = e.StartDate.ToString("yyyy-MM-dd"),
+        email = e.Email
+    })));
+
+    function loadEmployeeData() {
+        const select = document.getElementById('employeeSelect');
+        const employeeId = select.value;
+
+        if (employeeId && employees[employeeId]) {
+            const employee = employees[employeeId];
+
+            document.getElementById('employeeId').value = employeeId;
+            document.getElementById('fullName').value = employee.name;
+            document.getElementById('position').value = employee.position;
+            document.getElementById('department').value = employee.department;
+            document.getElementById('startDate').value = employee.startDate;
+            document.getElementById('endDate').value = '';
+
+            // prepare certificate fields as well
+            document.getElementById('cert_empId').textContent = employeeId;
+            document.getElementById('cert_name').textContent = employee.name.toUpperCase();
+            document.getElementById('cert_position').textContent = employee.position;
+            document.getElementById('cert_department').textContent = employee.department;
+            document.getElementById('cert_startDate').textContent = new Date(employee.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('lengthOfService').textContent = '-';
+
+            document.getElementById('employeeDetails').style.display = 'block';
+            document.getElementById('certificatePreview').style.display = 'none';
+        } else {
+            document.getElementById('employeeDetails').style.display = 'none';
+            document.getElementById('certificatePreview').style.display = 'none';
+        }
+    }
+
+    function calculateService() {
+        const startDateValue = document.getElementById('startDate').value;
+        if (!startDateValue) return;
+
+        const startDate = new Date(startDateValue);
+        const endDateValue = document.getElementById('endDate').value;
+        const endDate = endDateValue ? new Date(endDateValue) : new Date();
+
+        let years = endDate.getFullYear() - startDate.getFullYear();
+        let months = endDate.getMonth() - startDate.getMonth();
+        let days = endDate.getDate() - startDate.getDate();
+
+        if (days < 0) {
+            months--;
+            days += new Date(endDate.getFullYear(), endDate.getMonth(), 0).getDate();
+        }
+
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+
+        const lengthText = `${years} years, ${months} months, and ${days} days`;
+        document.getElementById('lengthOfService').textContent = lengthText;
+    }
+
+    function generateCertificate() {
+        const empId = document.getElementById('employeeId').value;
+        const fullName = document.getElementById('fullName').value;
+        const position = document.getElementById('position').value;
+        const department = document.getElementById('department').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value || new Date().toISOString().split('T')[0];
+        const length = document.getElementById('lengthOfService').textContent;
+
+        const startFormatted = new Date(startDate).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        });
+        const endFormatted = new Date(endDate).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        });
+
+        document.getElementById('cert_empId').textContent = empId ? `Employee ID: ${empId}` : '';
+        document.getElementById('cert_name').textContent = fullName.toUpperCase();
+        document.getElementById('cert_position').textContent = position;
+        document.getElementById('cert_department').textContent = department;
+        document.getElementById('cert_startDate').textContent = startFormatted;
+        document.getElementById('cert_endDate').textContent = endFormatted;
+        document.getElementById('cert_length').textContent = length;
+        document.getElementById('cert_issueDate').textContent =
+            new Date().getDate() + 'th day of ' +
+            new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        document.getElementById('certificatePreview').style.display = 'block';
+        document.getElementById('certificatePreview').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function downloadPDF() { alert('📄 Certificate downloaded as PDF!'); }
+    function printCertificate() { window.print(); }
+    function sendForApproval() { alert('✉️ Certificate sent to College President for approval!'); }
+</script>
+
+<style>
+    @@media print {
+        body *
+        {
+            visibility: hidden;
+        }
+        #certificateContent, #certificateContent * {
+            visibility: visible;
+        }
+        #certificateContent {
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+    }
+
+    .certificate-text {
+        text-align: justify;
+        text-justify: inter-word;
+    }
+</style>

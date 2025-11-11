@@ -1,0 +1,465 @@
+﻿@page "{token?}"
+@model CDM.HRManagement.Pages.Onboarding.FormModel
+@{
+    ViewData["Title"] = "Employee Onboarding";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <div class="mb-3">
+                    <i class="bi bi-building text-primary" style="font-size: 4rem;"></i>
+                </div>
+                <h1 class="display-5 fw-bold text-primary">Colegio de Montalban</h1>
+                <h2 class="h4 text-muted">Employee Onboarding Form</h2>
+                <p class="text-muted">Please fill out all required fields carefully.</p>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <form method="post">
+
+                        <!-- Personal Information Section -->
+                        <div class="mb-5">
+                            <h4 class="fw-bold text-primary mb-4">
+                                <i class="bi bi-person-badge"></i> Personal Information
+                            </h4>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Last Name <span class="text-danger">*</span></label>
+                                    <input type="text" asp-for="OnboardingData.LastName" class="form-control form-control-lg" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">First Name <span class="text-danger">*</span></label>
+                                    <input type="text" asp-for="OnboardingData.FirstName" class="form-control form-control-lg" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Middle Name <span class="text-danger">*</span></label>
+                                    <input type="text" asp-for="OnboardingData.MiddleName" class="form-control form-control-lg" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Sex <span class="text-danger">*</span></label>
+                                    <select class="form-select form-select-lg" required>
+                                        <option value="">Select</option>
+                                        <option>Male</option>
+                                        <option>Female</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Civil Status <span class="text-danger">*</span></label>
+                                    <select class="form-select form-select-lg" required>
+                                        <option value="">Select</option>
+                                        <option>Single</option>
+                                        <option>Married</option>
+                                        <option>Widowed</option>
+                                        <option>Separated</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-bold">Height (cm) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control form-control-lg" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-bold">Weight (kg) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control form-control-lg" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Birth Details Section -->
+                        <div class="mb-5">
+                            <h4 class="fw-bold text-primary mb-4">
+                                <i class="bi bi-calendar-event"></i> Birth Details
+                            </h4>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Date of Birth <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control form-control-lg" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Place of Birth <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control form-control-lg" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information Section -->
+                        <div class="mb-5">
+                            <h4 class="fw-bold text-primary mb-4">
+                                <i class="bi bi-telephone"></i> Contact Information
+                            </h4>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Email Address <span class="text-danger">*</span></label>
+                                    <input type="email" asp-for="OnboardingData.Email" class="form-control form-control-lg" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Phone Number <span class="text-danger">*</span></label>
+                                    <input type="tel" asp-for="OnboardingData.Phone" class="form-control form-control-lg" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Complete Address <span class="text-danger">*</span></label>
+                                    <textarea class="form-control form-control-lg" rows="3" required></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Family Background Section -->
+                        <div class="mb-5">
+                            <h4 class="fw-bold text-primary mb-4">
+                                <i class="bi bi-people"></i> Family Background
+                            </h4>
+
+                            <!-- Father's Information -->
+                            <div class="card mb-3 border-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3">Father's Information</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Father's Full Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Occupation <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Mother's Information -->
+                            <div class="card mb-3 border-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3">Mother's Information</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Mother's Maiden Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Occupation <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Children Information -->
+                            <div class="card border-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3">Children (if applicable)</h6>
+                                    <div id="childrenContainer">
+                                        <div class="row g-3 mb-2 children-item">
+                                            <div class="col-md-8">
+                                                <label class="form-label">Child's Full Name</label>
+                                                <input type="text" class="form-control">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Age</label>
+                                                <input type="number" class="form-control" min="0" max="100">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChild()">
+                                        <i class="bi bi-plus-circle"></i> Add Another Child
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Position & Department Section -->
+                        <div class="mb-5">
+                            <h4 class="fw-bold text-primary mb-4">
+                                <i class="bi bi-briefcase"></i> Position & Department
+                            </h4>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Position <span class="text-danger">*</span></label>
+                                    <input type="text" asp-for="OnboardingData.Position" class="form-control form-control-lg" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Department <span class="text-danger">*</span></label>
+                                    <input type="text" asp-for="OnboardingData.Department" class="form-control form-control-lg" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Educational Attainment Section -->
+                        <div class="mb-5">
+                            <h4 class="fw-bold text-primary mb-4">
+                                <i class="bi bi-mortarboard"></i> Educational Attainment
+                            </h4>
+
+                            <!-- Elementary -->
+                            <div class="card mb-3 border-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3">Elementary</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-8">
+                                            <label class="form-label">School Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Year Graduated <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" required min="1950" max="2025">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Junior High School -->
+                            <div class="card mb-3 border-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3">Junior High School</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-8">
+                                            <label class="form-label">School Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Year Graduated <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" required min="1950" max="2025">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Senior High School -->
+                            <div class="card mb-3 border-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3">Senior High School</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-8">
+                                            <label class="form-label">School Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Year Graduated <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" required min="1950" max="2025">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- College -->
+                            <div class="card mb-3 border-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3">College</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">School Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Degree/Course <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Year Graduated <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" required min="1950" max="2025">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Graduate Studies (Optional) -->
+                            <div class="card border-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3">Graduate Studies (Optional)</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">School Name</label>
+                                            <input type="text" class="form-control">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Degree</label>
+                                            <input type="text" class="form-control">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Year Graduated</label>
+                                            <input type="number" class="form-control" min="1950" max="2025">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Previous Work Experience Section -->
+                        <div class="mb-5">
+                            <h4 class="fw-bold text-primary mb-4">
+                                <i class="bi bi-briefcase-fill"></i> Previous Work Experience
+                            </h4>
+                            <div id="workExperienceContainer">
+                                <div class="card mb-3 border-light work-experience-item">
+                                    <div class="card-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Company Name</label>
+                                                <input type="text" class="form-control">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Position</label>
+                                                <input type="text" class="form-control">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">From (Year)</label>
+                                                <input type="number" class="form-control" min="1950" max="2025">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">To (Year)</label>
+                                                <input type="number" class="form-control" min="1950" max="2025">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Duration</label>
+                                                <input type="text" class="form-control">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" onclick="addWorkExperience()">
+                                <i class="bi bi-plus-circle"></i> Add More Work Experience
+                            </button>
+                        </div>
+
+                        <!-- Trainings Attended Section -->
+                        <div class="mb-5">
+                            <h4 class="fw-bold text-primary mb-4">
+                                <i class="bi bi-award"></i> Trainings/Seminars Attended
+                            </h4>
+                            <div id="trainingsContainer">
+                                <div class="card mb-3 border-light training-item">
+                                    <div class="card-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-8">
+                                                <label class="form-label">Training/Seminar Title</label>
+                                                <input type="text" class="form-control">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Date Conducted</label>
+                                                <input type="date" class="form-control">
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label">Conducted By</label>
+                                                <input type="text" class="form-control">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" onclick="addTraining()">
+                                <i class="bi bi-plus-circle"></i> Add More Training
+                            </button>
+                        </div>
+
+                        <!-- Skills Section -->
+                        <div class="mb-5">
+                            <h4 class="fw-bold text-primary mb-4">
+                                <i class="bi bi-tools"></i> Skills
+                            </h4>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">List your skills (comma-separated) <span class="text-danger">*</span></label>
+                                    <textarea class="form-control form-control-lg" rows="3" required></textarea>
+                                    <small class="text-muted">Separate each skill with a comma</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hobbies Section -->
+                        <div class="mb-5">
+                            <h4 class="fw-bold text-primary mb-4">
+                                <i class="bi bi-heart"></i> Hobbies & Interests
+                            </h4>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">List your hobbies (comma-separated) <span class="text-danger">*</span></label>
+                                    <textarea class="form-control form-control-lg" rows="3" required></textarea>
+                                    <small class="text-muted">Separate each hobby with a comma</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="text-center mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg px-5 py-3">
+                                <i class="bi bi-check-circle"></i> Submit Onboarding Form
+                            </button>
+                            <p class="text-muted mt-3 small">
+                                <i class="bi bi-info-circle"></i> By submitting this form, you confirm that all information provided is accurate and complete.
+                            </p>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Add more work experience fields
+    function addWorkExperience() {
+        const container = document.getElementById('workExperienceContainer');
+        const newItem = document.querySelector('.work-experience-item').cloneNode(true);
+
+        // Clear input values
+        newItem.querySelectorAll('input').forEach(input => input.value = '');
+
+        container.appendChild(newItem);
+    }
+
+    // Add more training fields
+    function addTraining() {
+        const container = document.getElementById('trainingsContainer');
+        const newItem = document.querySelector('.training-item').cloneNode(true);
+
+        // Clear input values
+        newItem.querySelectorAll('input').forEach(input => input.value = '');
+
+        container.appendChild(newItem);
+    }
+
+    // Add more children fields
+    function addChild() {
+        const container = document.getElementById('childrenContainer');
+        const newItem = document.querySelector('.children-item').cloneNode(true);
+
+        // Clear input values
+        newItem.querySelectorAll('input').forEach(input => input.value = '');
+
+        container.appendChild(newItem);
+    }
+
+    // Form validation feedback
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!this.checkValidity()) {
+            e.preventDefault();
+            alert('Please fill out all required fields marked with *');
+        }
+    });
+</script>
+
+<style>
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+
+    .btn-primary {
+        transition: all 0.3s ease;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+        }
+</style>

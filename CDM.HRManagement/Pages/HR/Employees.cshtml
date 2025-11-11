@@ -1,0 +1,410 @@
+﻿@page
+@model CDM.HRManagement.Pages.HR.EmployeesModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Employee List";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+
+    Func<DateTime, string> computeLength = start =>
+    {
+        var end = DateTime.Now.Date;
+        int years = end.Year - start.Year;
+        int months = end.Month - start.Month;
+        int days = end.Day - start.Day;
+        if (days < 0)
+        {
+            months--;
+            days += DateTime.DaysInMonth(end.Year, (end.Month == 0 ? 12 : end.Month));
+        }
+        if (months < 0)
+        {
+            years--;
+            months += 12;
+        }
+        return $"{years} years, {months} months";
+    };
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="display-6 fw-bold" style="color: #FFD544;">
+                <i class="bi bi-people-fill"></i> Employee Directory
+            </h1>
+            <p class="text-white">Manage and view all employees</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="/HR/Dashboard" class="btn btn-outline-secondary btn-lg" style="color: white; border-color: white;">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="alert">@Model.SuccessMessage</div>
+    }
+
+    <!-- Search and Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-search"></i> Search Employee
+                            </label>
+                            <input type="text" id="searchInput" class="form-control form-control-lg" placeholder="Search by name, position, or department...">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-funnel"></i> Filter by Department
+                            </label>
+                            <select id="departmentFilter" class="form-select form-select-lg">
+                                <option value="">All Departments</option>
+                                <option>Institute of Computing Studies</option>
+                                <option>Institute of Business</option>
+                                <option>Institute of Education</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-toggles"></i> Filter by Status
+                            </label>
+                            <select id="statusFilter" class="form-select form-select-lg">
+                                <option value="">All Status</option>
+                                <option>Active</option>
+                                <option>Resigned</option>
+                                <option>Retired</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button class="btn btn-outline-danger w-100" onclick="clearFilters()">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-list-ul"></i> Employee List
+                        <span class="badge bg-primary ms-2">@Model.Employees.Count employee(s)</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="employeeTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="px-4">Employee ID</th>
+                                    <th>Full Name</th>
+                                    <th>Position</th>
+                                    <th>Department</th>
+                                    <th>Start Date</th>
+                                    <th>Length of Service</th>
+                                    <th>Status</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Employees != null && Model.Employees.Any())
+                                {
+                                    foreach (var emp in Model.Employees)
+                                    {
+                                        <tr>
+                                            <td class="px-4 fw-bold">@emp.Id</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
+                                                        <i class="bi bi-person-fill text-primary"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold">@emp.Name</div>
+                                                        <small class="text-muted">@emp.Email</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>@emp.Position</td>
+                                            <td>@emp.Department</td>
+                                            <td>@emp.StartDate.ToString("MMMM dd, yyyy")</td>
+                                            <td><span class="badge bg-info">@computeLength(emp.StartDate)</span></td>
+                                            <td>
+                                                @if (emp.Status == "Active")
+                                                {
+                                                    <span class="badge bg-success">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">@emp.Status</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group" role="group">
+                                                    <button class="btn btn-sm btn-outline-primary" title="View Profile" onclick="openEditModal('@emp.Id', true)">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-warning" title="Edit" onclick="openEditModal('@emp.Id', false)">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="confirmDelete('@emp.Name','@emp.Id')">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted py-4">No employees yet.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle text-danger"></i> Confirm Delete
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="employeeName"></strong>?</p>
+                <p class="text-danger mb-0">
+                    <i class="bi bi-info-circle"></i> This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+
+                <form method="post" asp-page-handler="DeleteEmployee" id="deleteForm" class="m-0">
+                    <input type="hidden" name="employeeId" id="deleteEmployeeId" value="" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit / View Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="EditEmployee" id="editForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalTitle"><i class="bi bi-person-lines-fill"></i> Edit Employee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" asp-for="EditEmployee.Id" />
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Employee ID</label>
+                            <input id="edit_empId" type="text" class="form-control" readonly />
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Full Name</label>
+                            <input asp-for="EditEmployee.Name" class="form-control" id="edit_name" required />
+                            <span asp-validation-for="EditEmployee.Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Email</label>
+                            <input asp-for="EditEmployee.Email" type="email" class="form-control" id="edit_email" required />
+                            <span asp-validation-for="EditEmployee.Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Status</label>
+                            <select asp-for="EditEmployee.Status" class="form-select" id="edit_status" required>
+                                <option value="Active">Active</option>
+                                <option value="Resigned">Resigned</option>
+                                <option value="Retired">Retired</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Position</label>
+                            <input id="edit_position" type="text" class="form-control" readonly />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Department</label>
+                            <input id="edit_department" type="text" class="form-control" readonly />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Start Date</label>
+                            <input id="edit_startDate" type="date" class="form-control" readonly />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Length of Service</label>
+                            <input id="edit_length" type="text" class="form-control" readonly />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Inject employees map for client-side modals
+        const employees = @Html.Raw(JsonSerializer.Serialize(Model.Employees.ToDictionary(e => e.Id, e => new {
+            id = e.Id,
+            name = e.Name,
+            position = e.Position,
+            department = e.Department,
+            email = e.Email,
+            startDate = e.StartDate.ToString("yyyy-MM-dd"),
+            status = e.Status
+        })));
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('keyup', function () {
+            const searchValue = this.value.toLowerCase();
+            const tableRows = document.querySelectorAll('#employeeTable tbody tr');
+
+            tableRows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchValue) ? '' : 'none';
+            });
+        });
+
+        // Department filter
+        document.getElementById('departmentFilter').addEventListener('change', function () {
+            const filterValue = this.value.toLowerCase();
+            const tableRows = document.querySelectorAll('#employeeTable tbody tr');
+
+            tableRows.forEach(row => {
+                if (filterValue === '') {
+                    row.style.display = '';
+                } else {
+                    const departmentCell = row.cells[3];
+                    if (!departmentCell) return;
+                    const department = departmentCell.textContent.toLowerCase();
+                    row.style.display = department.includes(filterValue) ? '' : 'none';
+                }
+            });
+        });
+
+        // Status filter
+        document.getElementById('statusFilter').addEventListener('change', function () {
+            const filterValue = this.value.toLowerCase();
+            const tableRows = document.querySelectorAll('#employeeTable tbody tr');
+
+            tableRows.forEach(row => {
+                if (filterValue === '') {
+                    row.style.display = '';
+                } else {
+                    const statusCell = row.cells[6];
+                    if (!statusCell) return;
+                    const status = statusCell.textContent.toLowerCase();
+                    row.style.display = status.includes(filterValue) ? '' : 'none';
+                }
+            });
+        });
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('departmentFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+
+            const tableRows = document.querySelectorAll('#employeeTable tbody tr');
+            tableRows.forEach(row => row.style.display = '');
+        }
+
+        // Delete flow
+        function confirmDelete(name, id) {
+            document.getElementById('employeeName').textContent = name;
+            document.getElementById('deleteEmployeeId').value = id;
+            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            modal.show();
+        }
+
+        // Edit / View flow
+        function openEditModal(id, viewOnly) {
+            const emp = employees[id];
+            if (!emp) return;
+
+            // fill hidden bound input
+            const elId = document.querySelector('[name="EditEmployee.Id"]');
+            if (elId) elId.value = emp.id;
+
+            document.getElementById('edit_empId').value = emp.id;
+            document.getElementById('edit_name').value = emp.name;
+            document.getElementById('edit_email').value = emp.email;
+            document.getElementById('edit_status').value = emp.status || 'Active';
+            document.getElementById('edit_position').value = emp.position;
+            document.getElementById('edit_department').value = emp.department;
+            document.getElementById('edit_startDate').value = emp.startDate;
+
+            // compute length
+            const start = new Date(emp.startDate);
+            const now = new Date();
+            let years = now.getFullYear() - start.getFullYear();
+            let months = now.getMonth() - start.getMonth();
+            if (now.getDate() < start.getDate()) months--;
+            if (months < 0) { years--; months += 12; }
+            document.getElementById('edit_length').value = `${years} years, ${months} months`;
+
+            // viewOnly -> show read-only modal (disable inputs) and change title
+            const modalTitle = document.getElementById('editModalTitle');
+            const editForm = document.getElementById('editForm');
+            if (viewOnly) {
+                modalTitle.textContent = 'Employee Details';
+                // disable editable fields
+                document.getElementById('edit_name').readOnly = true;
+                document.getElementById('edit_email').readOnly = true;
+                document.getElementById('edit_status').disabled = true;
+                // hide submit button
+                editForm.querySelector('button[type="submit"]').style.display = 'none';
+            } else {
+                modalTitle.textContent = 'Edit Employee';
+                document.getElementById('edit_name').readOnly = false;
+                document.getElementById('edit_email').readOnly = false;
+                document.getElementById('edit_status').disabled = false;
+                editForm.querySelector('button[type="submit"]').style.display = '';
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('editModal'));
+            modal.show();
+        }
+    </script>
+}

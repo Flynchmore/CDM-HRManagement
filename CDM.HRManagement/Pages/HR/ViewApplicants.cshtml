@@ -1,0 +1,565 @@
+﻿@page
+@using CDM.HRManagement.Data
+@model CDM.HRManagement.Pages.HR.ViewApplicantsModel
+@{
+    ViewData["Title"] = "View Applicants";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+
+    // Read TempData into local variables once (avoids TempData being consumed multiple times)
+    var generatedLink = TempData["GeneratedLink"]?.ToString();
+    var generatedFor = TempData["GeneratedLinkFor"]?.ToString();
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="display-6 fw-bold" style="color: #FFD544;">
+                <i class="bi bi-person-lines-fill"></i>Pending Applicants
+            </h1>
+            <p class="text-white">Review and process employee onboarding submissions</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="/HR/Dashboard" class="btn btn-outline-secondary btn-lg" style="color: white; border-color: white;">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+
+            <!-- Open Add Applicant modal or page -->
+            <button type="button"
+                    class="btn btn-lg"
+                    style="background-color: #FFD544; color: black; border: none;"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addApplicantModal">
+                <i class="bi bi-person-plus-fill me-2"></i> Add New Applicant
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="alert">
+            @Model.SuccessMessage
+        </div>
+    }
+
+    @if (Model.Applicants == null || !Model.Applicants.Any())
+    {
+        <div class="alert alert-light text-center">
+            No pending applicants yet. Click <strong>Add New Applicant</strong> to create one.
+        </div>
+    }
+    else
+    {
+        <!-- Applicants List -->
+        <div class="row">
+            <div class="col-12">
+                @foreach (var app in Model.Applicants)
+                {
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-0 fw-bold">@app.Name</h5>
+                                    <small class="text-muted d-block">Applicant ID: @app.ApplicantCode</small>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar"></i> Submitted: @app.Submitted.ToString("MMMM dd, yyyy")
+                                    </small>
+                                </div>
+                                <span class="badge bg-warning fs-6">@app.Status</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Position</small>
+                                    <strong>@app.Position</strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Department</small>
+                                    <strong>@app.Department</strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Email</small>
+                                    <strong>@app.Email</strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Phone</small>
+                                    <strong>@app.Phone</strong>
+                                </div>
+                            </div>
+
+                            <hr class="my-3">
+
+                            <div class="d-flex gap-2 align-items-start">
+                                <!-- View Full Details -->
+                                <button class="btn btn-outline-primary flex-fill" data-bs-toggle="modal" data-bs-target="#detailsModal-@app.Id">
+                                    <i class="bi bi-eye"></i> View Full Details
+                                </button>
+
+                                <!-- Generate Link -->
+                                <form method="post" asp-page-handler="GenerateLink" asp-route-applicantId="@app.Id" class="flex-fill m-0">
+                                    <button type="submit" class="btn btn-warning w-100">
+                                        <i class="bi bi-link-45deg"></i> Generate Link
+                                    </button>
+                                </form>
+
+                                    @* Safely show generated link only for matching applicant *@
+                                    @if (!string.IsNullOrEmpty(generatedLink) && !string.IsNullOrEmpty(generatedFor) && generatedFor == app.Id.ToString())
+                                    {
+                                        <div class="card border-warning mt-2" style="max-width: 420px;">
+                                            <div class="card-body p-2">
+                                                <small class="text-muted">Generated Onboarding Link:</small>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="text"
+                                                           class="form-control form-control-sm"
+                                                           id="generatedLink-@app.Id"
+                                                           value="@generatedLink"
+                                                           readonly />
+                                                    <button type="button"
+                                                            class="btn btn-outline-primary btn-sm"
+                                                            onclick="copyLinkById('generatedLink-@app.Id')">
+                                                        <i class="bi bi-clipboard"></i> Copy
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <!-- Hire triggers confirmation modal -->
+                                    <button type="button" class="btn btn-success btn-lg" onclick="confirmHire('@app.Name','@app.Id')">
+                                        <i class="bi bi-check-circle"></i> Hire
+                                    </button>
+
+                                    <!-- Reject triggers confirmation modal -->
+                                    <button type="button" class="btn btn-danger btn-lg" onclick="confirmReject('@app.Name','@app.Id')">
+                                        <i class="bi bi-x-circle"></i> Reject
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Modal: Full Details -->
+                    <div class="modal fade" id="detailsModal-@app.Id" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header bg-primary text-white">
+                                    <h5 class="modal-title">Applicant Full Details</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+
+                                <div class="modal-body">
+                                    <h5 class="text-primary mb-3">Basic Applicant Info</h5>
+                                    <div class="row">
+                                        <div class="col-md-6"><strong>Name:</strong> @app.Name</div>
+                                        <div class="col-md-6"><strong>Applicant Code:</strong> @app.ApplicantCode</div>
+                                        <div class="col-md-4 mt-2"><strong>Position:</strong> @app.Position</div>
+                                        <div class="col-md-4 mt-2"><strong>Department:</strong> @app.Department</div>
+                                        <div class="col-md-4 mt-2"><strong>Status:</strong> @app.Status</div>
+                                        <div class="col-md-6 mt-2"><strong>Email:</strong> @app.Email</div>
+                                        <div class="col-md-6 mt-2"><strong>Phone:</strong> @app.Phone</div>
+                                        <div class="col-12 mt-2"><strong>Submitted:</strong> @app.Submitted.ToString("MMMM dd, yyyy HH:mm")</div>
+                                    </div>
+
+                                    <hr />
+
+                                    @if (app.OnboardingData != null)
+                                    {
+                                        var data = app.OnboardingData as dynamic;
+
+                                        <h5 class="text-primary mb-2">Personal Information</h5>
+                                        <div class="row">
+                                            <div class="col-md-4"><strong>Last Name:</strong> @(data?.LastName ?? "")</div>
+                                            <div class="col-md-4"><strong>First Name:</strong> @(data?.FirstName ?? "")</div>
+                                            <div class="col-md-4"><strong>Middle Name:</strong> @(data?.MiddleName ?? "")</div>
+                                            <div class="col-md-3 mt-2"><strong>Sex:</strong> @(data?.Sex ?? "")</div>
+                                            <div class="col-md-3 mt-2"><strong>Civil Status:</strong> @(data?.CivilStatus ?? "")</div>
+                                            <div class="col-md-3 mt-2"><strong>Height:</strong> @(data?.Height ?? "") cm</div>
+                                            <div class="col-md-3 mt-2"><strong>Weight:</strong> @(data?.Weight ?? "") kg</div>
+                                        </div>
+
+                                        <hr />
+                                        <h5 class="text-primary mb-2">Birth Details</h5>
+                                        <div class="row">
+                                            <div class="col-md-6"><strong>Date of Birth:</strong> @(data?.BirthDate?.ToShortDateString() ?? "—")</div>
+                                            <div class="col-md-6"><strong>Place of Birth:</strong> @(data?.BirthPlace ?? "—")</div>
+                                        </div>
+
+                                        <hr />
+                                        <h5 class="text-primary mb-2">Contact Information</h5>
+                                        <div class="row">
+                                            <div class="col-md-6"><strong>Email:</strong> @(data?.Email ?? "")</div>
+                                            <div class="col-md-6"><strong>Phone:</strong> @(data?.Phone ?? "")</div>
+                                            <div class="col-12 mt-2"><strong>Complete Address:</strong> @(data?.Address ?? "")</div>
+                                        </div>
+
+                                        <hr />
+                                        <h5 class="text-primary mb-2">Family Background</h5>
+                                        <div class="row">
+                                            <div class="col-md-6"><strong>Father's Full Name:</strong> @(data?.FatherFullName ?? "")</div>
+                                            <div class="col-md-6"><strong>Father's Occupation:</strong> @(data?.FatherOccupation ?? "")</div>
+                                            <div class="col-md-6 mt-2"><strong>Mother's Maiden Name:</strong> @(data?.MotherMaidenName ?? "")</div>
+                                            <div class="col-md-6 mt-2"><strong>Mother's Occupation:</strong> @(data?.MotherOccupation ?? "")</div>
+                                            <div class="col-12 mt-2"><strong>Children:</strong> @(data?.ChildrenSummary ?? "—")</div>
+                                        </div>
+
+                                        <hr />
+                                        <h5 class="text-primary mb-2">Position & Department</h5>
+                                        <div class="row">
+                                            <div class="col-md-6"><strong>Position:</strong> @app.OnboardingData.Position</div>
+                                            <div class="col-md-6"><strong>Department:</strong> @app.OnboardingData.Department</div>
+                                        </div>
+
+                                        <hr />
+                                        <h5 class="text-primary mb-2">Education</h5>
+                                        <div>
+                                            <div><strong>Elementary:</strong> @(data?.ElementarySchool ?? "") — Year: @(data?.ElementaryYear ?? "")</div>
+                                            <div><strong>Junior High:</strong> @(data?.JuniorHighSchool ?? "") — Year: @(data?.JuniorHighYear ?? "")</div>
+                                            <div><strong>Senior High:</strong> @(data?.SeniorHighSchool ?? "") — Year: @(data?.SeniorHighYear ?? "")</div>
+                                            <div><strong>College:</strong> @(data?.CollegeSchool ?? "") — @(data?.CollegeDegree ?? "") — Year: @(data?.CollegeYear ?? "")</div>
+                                            <div><strong>Graduate Studies:</strong> @(data?.GradSchool ?? "") — @(data?.GradDegree ?? "") — Year: @(data?.GradYear ?? "")</div>
+                                        </div>
+
+                                        <hr />
+                                        <h5 class="text-primary mb-2">Previous Work Experience</h5>
+                                        <div class="small">
+                                            @* If you saved experience as a list/JSON, show a compact summary. The dynamic access above avoids compile errors if properties are missing. *@
+                                            <pre class="small">@System.Text.Json.JsonSerializer.Serialize((object)((app.OnboardingData as dynamic)?.WorkExperience ?? "[]"), new System.Text.Json.JsonSerializerOptions { WriteIndented = true })</pre>
+                                        </div>
+
+                                        <hr />
+                                        <h5 class="text-primary mb-2">Previous Work Experience</h5>
+                                        <div class="small">
+                                            <pre class="small">@System.Text.Json.JsonSerializer.Serialize(data?.WorkExperience ?? new List<object>(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true })</pre>
+                                        </div>
+
+                                        <hr />
+                                        <h5 class="text-primary mb-2">Trainings / Seminars</h5>
+                                        <div class="small">
+                                            <pre class="small">@System.Text.Json.JsonSerializer.Serialize(data?.Trainings ?? new List<object>(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true })</pre>
+                                        </div>
+
+                                        <hr />
+                                        <h5 class="text-primary mb-2">Skills</h5>
+                                        <div>@(data?.Skills ?? "—")</div>
+
+                                        <hr />
+                                        <h5 class="text-primary mb-2">Hobbies & Interests</h5>
+                                        <div>@(data?.Hobbies ?? "—")</div>
+
+                                        <hr />
+                                        <h6 class="text-muted">Raw Onboarding JSON</h6>
+                                        <pre class="small bg-light p-2" style="max-height:280px; overflow:auto;">
+                                                        @System.Text.Json.JsonSerializer.Serialize(app.OnboardingData, new System.Text.Json.JsonSerializerOptions { WriteIndented = true })
+                                                    </pre>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">No onboarding form submitted yet for this applicant.</p>
+                                    }
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end modal -->
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Add Applicant Modal (kept exactly as you had it) -->
+<div class="modal fade" id="addApplicantModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddApplicant">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-person-plus-fill me-2"></i> Add New Applicant
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="NewApplicant.Name" class="form-label fw-semibold">Full Name</label>
+                            <input asp-for="NewApplicant.Name" class="form-control" placeholder="Enter full name" required />
+                            <span asp-validation-for="NewApplicant.Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="NewApplicant.Department" class="form-label fw-semibold">Department</label>
+                            <select asp-for="NewApplicant.Department"
+                                    class="form-select"
+                                    id="departmentSelect"
+                                    required>
+                                <option value="">-- Select Department --</option>
+                                @foreach (var dept in Model.Departments)
+                                {
+                                    <option value="@dept">@dept</option>
+                                }
+                            </select>
+                            <span asp-validation-for="NewApplicant.Department" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="NewApplicant.Position" class="form-label fw-semibold">Position</label>
+                            <select asp-for="NewApplicant.Position"
+                                    class="form-select"
+                                    id="positionSelect"
+                                    required
+                                    disabled>
+                                <option value="">-- Select Department First --</option>
+                            </select>
+                            <span asp-validation-for="NewApplicant.Position" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="NewApplicant.Email" class="form-label fw-semibold">Email</label>
+                            <input asp-for="NewApplicant.Email" type="email" class="form-control" placeholder="Enter email" required />
+                            <span asp-validation-for="NewApplicant.Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="NewApplicant.Phone" class="form-label fw-semibold">Phone Number</label>
+                            <input asp-for="NewApplicant.Phone" class="form-control" placeholder="Enter phone number" required />
+                            <span asp-validation-for="NewApplicant.Phone" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" style="background-color: #3a5a40; color: white;">
+                        <i class="bi bi-check2-circle me-1"></i> Add This Applicant
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Hire Confirmation Modal -->
+<div class="modal fade" id="hireConfirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-check-circle text-success"></i> Confirm Hire
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to hire <strong id="hireApplicantName"></strong>?</p>
+            </div>
+            <div class="modal-footer d-flex gap-2">
+                <button type="button" class="btn btn-secondary flex-fill" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" asp-page-handler="HireApplicant" id="hireForm" class="flex-fill m-0">
+                    <input type="hidden" name="applicantId" id="hireApplicantId" value="" />
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Hire
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Reject Confirmation Modal -->
+<div class="modal fade" id="rejectConfirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-x-circle text-danger"></i> Confirm Reject
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Do you want to reject <strong id="rejectApplicantName"></strong>?</p>
+                <p class="text-danger mb-0"><i class="bi bi-info-circle"></i> This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+
+                <form method="post" asp-page-handler="RejectApplicant" id="rejectForm" class="m-0">
+                    <input type="hidden" name="applicantId" id="rejectApplicantId" value="" />
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="bi bi-x-circle"></i> Reject
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+                // ==============================
+                // Global JSON data
+                // ==============================
+               const applicants = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Applicants?.ToList() ?? new List<InMemoryStore.Applicant>()));
+
+        // Copy link by input id (modern clipboard API)
+
+                // ==============================
+                // Copy link to clipboard
+                // ==============================
+                function copyLinkById(inputId) {
+                    const input = document.getElementById(inputId);
+                    if (!input || !input.value) return;
+
+                    navigator.clipboard.writeText(input.value)
+                        .then(() => {
+                            input.classList.add('border-success');
+                            setTimeout(() => input.classList.remove('border-success'), 1200);
+
+                            const toast = document.createElement('div');
+                            toast.className = 'alert alert-success position-fixed';
+                            toast.style.right = '20px';
+                            toast.style.bottom = '20px';
+                            toast.style.zIndex = 1060;
+                            toast.textContent = 'Link copied to clipboard';
+                            document.body.appendChild(toast);
+                            setTimeout(() => toast.remove(), 1500);
+                        })
+                        .catch(err => {
+                            console.error('Clipboard write failed', err);
+                            alert('Failed to copy link. Please copy manually.');
+                        });
+                }
+
+                // Legacy fallback (for old browsers)
+                function copyLink(input) {
+                    try {
+                        input.select();
+                        document.execCommand("copy");
+                        alert("Link copied! You can now paste it into Messenger.");
+                    } catch (e) {
+                        console.error(e);
+                        alert("Copy failed.");
+                    }
+                }
+
+                // ==============================
+                // Cascading dropdown: Department -> Position
+                // ==============================
+                document.addEventListener('DOMContentLoaded', function () {
+                    const departmentSelect = document.getElementById('departmentSelect');
+                    const positionSelect = document.getElementById('positionSelect');
+                    const addApplicantModal = document.getElementById('addApplicantModal');
+
+                    if (!departmentSelect || !positionSelect) return;
+
+                    departmentSelect.addEventListener('change', function () {
+                        const selectedDept = this.value;
+                        positionSelect.innerHTML = '<option value="">-- Loading... --</option>';
+                        positionSelect.disabled = true;
+
+                        if (!selectedDept) {
+                            positionSelect.innerHTML = '<option value="">-- Select Department First --</option>';
+                            return;
+                        }
+
+                        fetch(`?handler=Positions&department=${encodeURIComponent(selectedDept)}`)
+                            .then(res => res.ok ? res.json() : Promise.reject('Network error'))
+                            .then(positions => {
+                                if (!Array.isArray(positions) || positions.length === 0) {
+                                    positionSelect.innerHTML = '<option value="">-- No positions available --</option>';
+                                    return;
+                                }
+
+                                positionSelect.innerHTML = '<option value="">-- Select Position --</option>';
+                                positions.forEach(pos => {
+                                    const option = document.createElement('option');
+                                    option.value = pos ?? "";
+                                    option.textContent = pos ?? "";
+                                    positionSelect.appendChild(option);
+                                });
+                                positionSelect.disabled = false;
+                            })
+                            .catch(err => {
+                                console.error('Error fetching positions:', err);
+                                positionSelect.innerHTML = '<option value="">-- Error loading positions --</option>';
+                            });
+                    });
+
+                    // Reset modal form on close
+                    if (addApplicantModal) {
+                        addApplicantModal.addEventListener('hidden.bs.modal', function () {
+                            departmentSelect.value = '';
+                            positionSelect.innerHTML = '<option value="">-- Select Department First --</option>';
+                            positionSelect.disabled = true;
+
+                            addApplicantModal.querySelectorAll('input, select').forEach(input => {
+                                if (input.type === 'select-one') input.selectedIndex = 0;
+                                else input.value = '';
+                            });
+                        });
+                    }
+                });
+
+                // ==============================
+                // View applicant details alert (fallback)
+                // ==============================
+                function viewDetails(name) {
+                    const applicant = applicants.find(a => a.Name === name);
+                    if (!applicant) { alert("Applicant not found!"); return; }
+
+                    let details = `
+        Name: ${applicant.Name}
+        Position: ${applicant.Position}
+        Department: ${applicant.Department}
+        Email: ${applicant.Email}
+        Phone: ${applicant.Phone}
+        Status: ${applicant.Status}
+        `;
+
+                    if (applicant.OnboardingData) {
+                        details += `
+        --- Onboarding Info ---
+        Full Name: ${applicant.OnboardingData.FirstName} ${applicant.OnboardingData.LastName}
+        Email: ${applicant.OnboardingData.Email}
+        Phone: ${applicant.OnboardingData.Phone}
+        `;
+                    }
+
+                    alert(details);
+                }
+
+                // ==============================
+                // Hire / Reject Confirmation Modals
+                // ==============================
+                function confirmHire(name, id) {
+                    const nameEl = document.getElementById('hireApplicantName');
+                    const idEl = document.getElementById('hireApplicantId');
+                    const modalEl = document.getElementById('hireConfirmModal');
+                    if (!nameEl || !idEl || !modalEl) return;
+
+                    nameEl.textContent = name;
+                    idEl.value = id;
+                    new bootstrap.Modal(modalEl).show();
+                }
+
+                function confirmReject(name, id) {
+                    const nameEl = document.getElementById('rejectApplicantName');
+                    const idEl = document.getElementById('rejectApplicantId');
+                    const modalEl = document.getElementById('rejectConfirmModal');
+                    if (!nameEl || !idEl || !modalEl) return;
+
+                    nameEl.textContent = name;
+                    idEl.value = id;
+                    new bootstrap.Modal(modalEl).show();
+                }
+    </script>
+
+    <script src="~/js/viewApplicants.js"></script> @* Keep additional JS in external file *@
+}

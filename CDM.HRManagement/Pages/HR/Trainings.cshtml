@@ -1,0 +1,424 @@
+﻿@page
+@model CDM.HRManagement.Pages.HR.TrainingsModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Training Records";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="display-6 fw-bold" style="color: #FFD544;">
+                <i class="bi bi-mortarboard-fill"></i> Training Records
+            </h1>
+            <p class="text-white">Manage employee trainings and track trainers</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-lg me-2"
+                    style="background-color: #FFD544; color: black; border: none;"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addTrainingModal">
+                <i class="bi bi-plus-circle me-2"></i> Add New Training
+            </button>
+            <a href="/HR/Dashboard" class="btn btn-outline-secondary btn-lg" style="color: white; border-color: white;">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success">@Model.SuccessMessage</div>
+    }
+
+    <!-- Search & Filters -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input id="searchTrainingInput" type="text" class="form-control form-control-lg" placeholder="Search trainings by position or trainer..." />
+        </div>
+        <div class="col-md-3">
+            <select id="trainingDepartmentFilter" class="form-select form-select-lg">
+                <option value="">All Departments</option>
+                <option>Institute of Computing Studies</option>
+                <option>Institute of Business</option>
+                <option>Institute of Education</option>
+            </select>
+        </div>
+       <div class="col-md-3 text-end">
+</div>
+
+    </div>
+
+    @if (Model.Trainings == null || !Model.Trainings.Any())
+    {
+        <div class="alert alert-light text-center">
+            No trainings yet. Click <strong>Add New Training</strong> to create one.
+        </div>
+    }
+    else
+    {
+        <div class="row g-4" id="trainingList">
+            @foreach (var tr in Model.Trainings)
+            {
+                <div class="col-md-6 training-card-col" data-position="@tr.Position.ToLower()" data-department="@tr.Department.ToLower()">
+                    <div class="card border-0 bg-light h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-0">@tr.Position</h5>
+                                </div>
+
+                                <!-- department badge placed upper-right (as requested) -->
+                                <span class="badge" style="color: #3a5a40;">@tr.Department</span>
+                            </div>
+
+                            <div class="mb-3">
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-calendar"></i> Date: @tr.Date.ToString("MMMM dd, yyyy")
+                                </small>
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-clock"></i> Duration: @tr.DurationHours hours
+                                </small>
+                            </div>
+
+                            <div class="mb-3">
+                                <strong class="text" style="color: #3a5a40;">Trainer:</strong>
+                                <p class="mb-0">@tr.TrainerName - @tr.TrainerPosition</p>
+                            </div>
+
+                            <div class="mb-3">
+                                <strong class="text" style="color: #3a5a40;">Participants:</strong>
+                                <p class="mb-0">@tr.Participants.Count participants</p>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="openViewModal('@tr.Id')">
+                                    <i class="bi bi-eye"></i> View Details
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" onclick="openEditModal('@tr.Id')">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+
+                                <!-- delete uses modal confirmation like employees -->
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDeleteTraining('@tr.Position','@tr.Department','@tr.Id')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+</div>
+
+<!-- Add Training Modal (unchanged) -->
+<div class="modal fade" id="addTrainingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddTraining">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle"></i> Add New Training</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Department</label>
+                            <select name="NewTraining.Department" id="add_department" class="form-select" required onchange="populatePositions('add')">
+                                <option value="">Choose department</option>
+                                @foreach (var d in TrainingsModel.DepartmentPositions.Keys)
+                                {
+                                    <option>@d</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Position</label>
+                            <select name="NewTraining.Position" id="add_position" class="form-select" required>
+                                <option value="">Choose position</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Date</label>
+                            <input name="NewTraining.Date" type="date" class="form-control" required value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Duration (hours)</label>
+                            <select name="NewTraining.DurationHours" class="form-select" required>
+                                <option value="3">3 hours</option>
+                                <option value="5">5 hours</option>
+                                <option value="7">7 hours</option>
+                                <option value="8">8 hours</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Trainer Name</label>
+                            <input name="NewTraining.TrainerName" class="form-control" placeholder="Trainer full name" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Trainer Position</label>
+                            <input name="NewTraining.TrainerPosition" class="form-control" placeholder="Trainer position" required />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Trainees / Participants (one per line)</label>
+                            <textarea name="NewTraining.ParticipantsText" class="form-control" rows="4" placeholder="Enter each participant on a new line"></textarea>
+                            <small class="text-muted">Number of participants will be shown in the list.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" style="background-color: #3a5a40; color: white;">
+                        <i class="bi bi-check2-circle me-1"></i> Add This Training
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Modal (unchanged) -->
+<div class="modal fade" id="viewTrainingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-eye"></i> Training Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div id="view_trainingContent"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal (unchanged) -->
+<div class="modal fade" id="editTrainingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="EditTraining" id="editTrainingForm">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil"></i> Edit Training</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" name="EditTraining.Id" id="edit_trainingId" />
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Department</label>
+                            <input id="edit_department" class="form-control" readonly />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Position</label>
+                            <input id="edit_position_readonly" class="form-control" readonly />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Date</label>
+                            <input id="edit_date" type="date" class="form-control" readonly />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Duration (hours)</label>
+                            <select name="EditTraining.DurationHours" id="edit_duration" class="form-select" required>
+                                <option value="3">3 hours</option>
+                                <option value="5">5 hours</option>
+                                <option value="7">7 hours</option>
+                                <option value="8">8 hours</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Trainer Name</label>
+                            <input name="EditTraining.TrainerName" id="edit_trainerName" class="form-control" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Trainer Position</label>
+                            <input name="EditTraining.TrainerPosition" id="edit_trainerPosition" class="form-control" required />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Trainees / Participants (one per line)</label>
+                            <textarea name="EditTraining.ParticipantsText" id="edit_participants" class="form-control" rows="5"></textarea>
+                            <small class="text-muted">Edit participant list as needed.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal (matches employee modal style) -->
+<div class="modal fade" id="deleteTrainingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle text-danger"></i> Confirm Delete
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteTrainingTitle"></strong>?</p>
+                <p class="text-danger mb-0">
+                    <i class="bi bi-info-circle"></i> This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+
+                <form method="post" asp-page-handler="DeleteTraining" id="deleteTrainingForm" class="m-0">
+                    <input type="hidden" name="trainingId" id="deleteTrainingId" value="" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Department -> positions map injected from server
+        const deptPositions = @Html.Raw(JsonSerializer.Serialize(TrainingsModel.DepartmentPositions));
+
+        // Trainings map for client-side modals
+        const trainings = @Html.Raw(JsonSerializer.Serialize(Model.Trainings.ToDictionary(t => t.Id, t => new {
+            id = t.Id,
+            department = t.Department,
+            position = t.Position,
+            date = t.Date.ToString("yyyy-MM-dd"),
+            duration = t.DurationHours,
+            trainerName = t.TrainerName,
+            trainerPosition = t.TrainerPosition,
+            participants = t.Participants
+        })));
+
+        function populatePositions(prefix) {
+            const depEl = document.getElementById(`${prefix}_department`);
+            const posEl = document.getElementById(`${prefix}_position`);
+            const dep = depEl ? depEl.value : '';
+            posEl.innerHTML = '<option value="">Choose position</option>';
+            if (!dep) return;
+            const list = deptPositions[dep] || [];
+            list.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                posEl.appendChild(opt);
+            });
+        }
+
+        // Search & filter functions for training cards
+        document.getElementById('searchTrainingInput').addEventListener('keyup', function () {
+            applyTrainingFilters();
+        });
+        document.getElementById('trainingDepartmentFilter').addEventListener('change', function () {
+            applyTrainingFilters();
+        });
+
+        function clearTrainingFilters() {
+            document.getElementById('searchTrainingInput').value = '';
+
+            // Reset select2 for department filter
+            const deptFilter = document.getElementById('trainingDepartmentFilter');
+            const select2 = deptFilter.nextElementSibling; // Select2 element immediately after the select
+            if (select2 && select2.classList.contains('select2-container')) {
+                const newSelection = document.createElement('span');
+                newSelection.className = 'select2-selection';
+                newSelection.setAttribute('role', 'combobox');
+                newSelection.setAttribute('aria-haspopup', 'true');
+                newSelection.setAttribute('aria-expanded', 'false');
+                newSelection.setAttribute('tabindex', '0');
+                deptFilter.parentNode.insertBefore(newSelection, select2);
+                select2.remove();
+            }
+
+            applyTrainingFilters();
+        }
+
+        function applyTrainingFilters() {
+            const search = document.getElementById('searchTrainingInput').value.trim().toLowerCase();
+            const depFilter = document.getElementById('trainingDepartmentFilter').value.trim().toLowerCase();
+            document.querySelectorAll('.training-card-col').forEach(col => {
+                const pos = (col.getAttribute('data-position') || '').toLowerCase();
+                const dep = (col.getAttribute('data-department') || '').toLowerCase();
+                const matchSearch = !search || pos.includes(search) || (col.textContent || '').toLowerCase().includes(search);
+                const matchDep = !depFilter || dep === depFilter;
+                col.style.display = (matchSearch && matchDep) ? '' : 'none';
+            });
+        }
+
+        function openViewModal(id) {
+            const t = trainings[id];
+            if (!t) return;
+            const participantsHtml = (t.participants || []).map(n => `<li>${n}</li>`).join('');
+            const html = `
+                <div>
+                    <p><strong>Department:</strong> ${t.department}</p>
+                    <p><strong>Position:</strong> ${t.position}</p>
+                    <p><strong>Date:</strong> ${new Date(t.date).toLocaleDateString()}</p>
+                    <p><strong>Duration:</strong> ${t.duration} hours</p>
+                    <p><strong>Trainer:</strong> ${t.trainerName} - ${t.trainerPosition}</p>
+                    <p><strong>Participants (${(t.participants || []).length}):</strong></p>
+                    <ul>${participantsHtml}</ul>
+                </div>`;
+            document.getElementById('view_trainingContent').innerHTML = html;
+            const modal = new bootstrap.Modal(document.getElementById('viewTrainingModal'));
+            modal.show();
+        }
+
+        function openEditModal(id) {
+            const t = trainings[id];
+            if (!t) return;
+
+            document.getElementById('edit_trainingId').value = t.id;
+            document.getElementById('edit_department').value = t.department;
+            document.getElementById('edit_position_readonly').value = t.position;
+            document.getElementById('edit_date').value = t.date;
+            document.getElementById('edit_duration').value = t.duration;
+            document.getElementById('edit_trainerName').value = t.trainerName;
+            document.getElementById('edit_trainerPosition').value = t.trainerPosition;
+            document.getElementById('edit_participants').value = (t.participants || []).join('\n');
+
+            const modal = new bootstrap.Modal(document.getElementById('editTrainingModal'));
+            modal.show();
+        }
+
+        // Delete training: open confirmation modal similar to employee delete
+        function confirmDeleteTraining(position, department, id) {
+            document.getElementById('deleteTrainingTitle').textContent = `${position} — ${department}`;
+            document.getElementById('deleteTrainingId').value = id;
+            const modal = new bootstrap.Modal(document.getElementById('deleteTrainingModal'));
+            modal.show();
+        }
+    </script>
+}
